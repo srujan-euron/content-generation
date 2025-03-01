@@ -1,6 +1,6 @@
 import { openai } from '@ai-sdk/openai';
 // import { google } from '@ai-sdk/google';
-import { generateText, generateObject } from 'ai';
+import { generateObject } from 'ai';
 import { z } from 'zod';
 import { NextResponse } from 'next/server';
 
@@ -84,38 +84,38 @@ Your task is to:
     model,
     prompt: `Create extremely detailed content for each chapter and its subtopics from this structure: ${JSON.stringify(topics_and_subtopics)}
 
-Instructions:
-1. For each chapter and subtopic, provide:
-   - A comprehensive introduction
-   - Detailed explanation of key concepts and principles
-   - In-depth theoretical background
-   - Multiple real-world examples and case studies
-   - Step-by-step tutorials or walkthroughs
-   - Practical exercises and applications
-   - Common pitfalls and how to avoid them
-   - Best practices and industry standards
-   - Summary of key points
-   - Review questions and discussion topics
+      Instructions:
+          1. For each chapter and subtopic, provide:
+            - A comprehensive introduction
+            - Detailed explanation of key concepts and principles
+            - In-depth theoretical background
+            - Multiple real-world examples and case studies
+            - Step-by-step tutorials or walkthroughs
+            - Practical exercises and applications
+            - Common pitfalls and how to avoid them
+            - Best practices and industry standards
+            - Summary of key points
+            - Review questions and discussion topics
 
-2. Ensure content:
-   - Is extremely detailed and thorough
-   - Flows logically from basic to advanced concepts
-   - Includes plenty of examples and illustrations
-   - Connects theory to real-world practice
-   - Is clear, engaging, and professional
-   - Covers both fundamentals and edge cases
-   - Addresses common misconceptions
-   - Provides actionable insights
+          2. Ensure content:
+            - Is extremely detailed and thorough
+            - Flows logically from basic to advanced concepts
+            - Includes plenty of examples and illustrations
+            - Connects theory to real-world practice
+            - Is clear, engaging, and professional
+            - Covers both fundamentals and edge cases
+            - Addresses common misconceptions
+            - Provides actionable insights
 
-Format the content with:
-- Clear hierarchical structure
-- Well-organized sections and subsections
-- Bullet points for key concepts
-- Numbered steps for procedures
-- Code examples where appropriate
-- Practice exercises
-- Discussion questions
-- Further reading suggestions`,
+          Format the content with:
+            - Clear hierarchical structure
+            - Well-organized sections and subsections
+            - Bullet points for key concepts
+            - Numbered steps for procedures
+            - Code examples where appropriate
+            - Practice exercises
+            - Discussion questions
+            - Further reading suggestions`,
     schema: z.object({
       sections: z.array(
         z.object({
@@ -143,37 +143,36 @@ Format the content with:
   });
 
   // Generate diagram
-  const { text: diagram } = await generateText({
-    model,
-    prompt: `Create a detailed ASCII diagram showing the hierarchical structure of this book/course: ${JSON.stringify(topics_and_subtopics)}
+//   const { text: diagram } = await generateText({
+//     model,
+//     prompt: `Create a detailed ASCII diagram showing the hierarchical structure of this book/course: ${JSON.stringify(topics_and_subtopics)}
 
-Instructions:
-1. Show the main title at the top
-2. Connect it to each chapter
-3. Show relationships between topics
-4. Use ASCII characters to create:
-   - Boxes for main topics
-   - Lines for connections
-   - Arrows for flow
-   - Clear hierarchy levels
-5. Make it visually clear and easy to understand
-6. Include chapter numbers and short titles
-7. Show progression and relationships`,
+// Instructions:
+// 1. Show the main title at the top
+// 2. Connect it to each chapter
+// 3. Show relationships between topics
+// 4. Use ASCII characters to create:
+//    - Boxes for main topics
+//    - Lines for connections
+//    - Arrows for flow
+//    - Clear hierarchy levels
+// 5. Make it visually clear and easy to understand
+// 6. Include chapter numbers and short titles
+// 7. Show progression and relationships`,
 
-    system: `You are an expert in creating clear, visual representations of complex information structures.
-Create an ASCII diagram that:
-- Shows clear hierarchy
-- Uses simple lines and boxes
-- Makes relationships obvious
-- Is easy to read and understand
-- Fits well in a terminal or text display`,
-  });
+//     system: `You are an expert in creating clear, visual representations of complex information structures.
+// Create an ASCII diagram that:
+// - Shows clear hierarchy
+// - Uses simple lines and boxes
+// - Makes relationships obvious
+// - Is easy to read and understand
+// - Fits well in a terminal or text display`,
+//   });
 
   return {
     topics_and_subtopics,
     interviewQuestions,
     detailedContent,
-    diagram,
   };
 }
 

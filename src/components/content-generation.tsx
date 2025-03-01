@@ -43,7 +43,7 @@ export default function ContentGenerator() {
   
   // Add state for collapsible cards
   const [isOverviewExpanded, setIsOverviewExpanded] = useState(false);
-  const [isDiagramExpanded, setIsDiagramExpanded] = useState(false);
+  // const [isDiagramExpanded, setIsDiagramExpanded] = useState(false);
   const [isQuestionsExpanded, setIsQuestionsExpanded] = useState(false);
   const [isContentExpanded, setIsContentExpanded] = useState(false);
   
@@ -212,7 +212,7 @@ export default function ContentGenerator() {
           </Card>
 
           {/* Visual Structure Card */}
-          {result.diagram && (
+          {/* {result.diagram && (
             <Card className="overflow-hidden bg-white/50 shadow-lg backdrop-blur-sm dark:bg-gray-800/50">
               <div 
                 className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center cursor-pointer"
@@ -231,7 +231,7 @@ export default function ContentGenerator() {
                 </div>
               )}
             </Card>
-          )}
+          )} */}
 
           {/* Interview Questions Card */}
           <Card className="overflow-hidden bg-white/50 shadow-lg backdrop-blur-sm dark:bg-gray-800/50">
