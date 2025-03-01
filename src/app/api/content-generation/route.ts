@@ -130,6 +130,16 @@ Format the content with:
         })
       ),
     }),
+    system: `You are an expert educational content architect specializing in creating well-structured learning materials.
+    
+    Create content that is extremely detailed and thorough, and flows logically from basic to advanced concepts.
+    Include plenty of examples and illustrations, and connect theory to real-world practice.
+    Make it clear, engaging, and professional.
+    Cover both fundamentals and edge cases.
+    Address common misconceptions and provide actionable insights.
+
+    Content for each subtopic should be atleast 2000 words.
+    `
   });
 
   // Generate diagram
@@ -149,6 +159,7 @@ Instructions:
 5. Make it visually clear and easy to understand
 6. Include chapter numbers and short titles
 7. Show progression and relationships`,
+
     system: `You are an expert in creating clear, visual representations of complex information structures.
 Create an ASCII diagram that:
 - Shows clear hierarchy
