@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Loader2, ChevronDown, ChevronUp, Save } from 'lucide-react';
+import { Loader2, ChevronDown, ChevronUp, Save, Image } from 'lucide-react';
 import Sidebar from './sidebar';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -35,6 +35,15 @@ interface GenerationResponse {
   diagram: string;
 }
 
+interface DiagramResponse {
+  imageUrl: string;
+  createEraserFileUrl: string;
+  diagrams: {
+    diagramType: string;
+    code: string;
+  }[];
+}
+
 export default function ContentGenerator() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -49,6 +58,10 @@ export default function ContentGenerator() {
   
   // Add state for sidebar
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  
+  // Add state for diagram generation
+  const [generatingDiagram, setGeneratingDiagram] = useState<string | null>(null);
+  const [diagrams, setDiagrams] = useState<Record<string, DiagramResponse>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,6 +101,7 @@ export default function ContentGenerator() {
         title: result.topics_and_subtopics.title || `Content ${new Date().toLocaleString()}`,
         timestamp: Date.now(),
         data: result,
+        diagrams: diagrams,
       };
       
       // Get existing saved content
@@ -111,7 +125,43 @@ export default function ContentGenerator() {
   // Function to load content from sidebar
   const loadContent = (content: Record<string, unknown>) => {
     setResult(content as unknown as GenerationResponse);
+    if ('diagrams' in content && content.diagrams) {
+      setDiagrams(content.diagrams as Record<string, DiagramResponse>);
+    }
     setIsSidebarOpen(false);
+  };
+
+  // Function to generate diagram
+  const generateDiagram = async (text: string, id: string, diagramType: string = 'concept-map') => {
+    setGeneratingDiagram(id);
+    
+    try {
+      const response = await fetch('/api/generate-diagram', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          text,
+          diagramType,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate diagram');
+      }
+
+      const data = await response.json();
+      setDiagrams(prev => ({
+        ...prev,
+        [id]: data
+      }));
+    } catch (err) {
+      console.error('Error generating diagram:', err);
+      alert('Failed to generate diagram');
+    } finally {
+      setGeneratingDiagram(null);
+    }
   };
 
   return (
@@ -179,13 +229,52 @@ export default function ContentGenerator() {
 
           {/* Overview Card */}
           <Card className="overflow-hidden bg-white/50 shadow-lg backdrop-blur-sm dark:bg-gray-800/50">
-            <div 
-              className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center cursor-pointer"
-              onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
-            >
+            <div className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center">
               <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Course Overview</h3>
-              {isOverviewExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => generateDiagram(
+                    `Create a concept map for this course: ${result.topics_and_subtopics.title}. The main topics are: ${result.topics_and_subtopics.topics.map(t => t.title).join(', ')}`,
+                    'overview',
+                    'concept-map'
+                  )}
+                  disabled={!!generatingDiagram}
+                  className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-3 py-1 h-8"
+                >
+                  {generatingDiagram === 'overview' ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Image size={16} />
+                  )}
+                  <span className="text-sm">Generate Diagram</span>
+                </Button>
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => setIsOverviewExpanded(!isOverviewExpanded)}
+                >
+                  {isOverviewExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </div>
+              </div>
             </div>
+            {diagrams['overview'] && (
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col items-center">
+                  <img 
+                    src={diagrams['overview'].imageUrl} 
+                    alt="Course Overview Diagram" 
+                    className="max-w-full rounded-lg shadow-md"
+                  />
+                  <a 
+                    href={diagrams['overview'].createEraserFileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Open in Eraser
+                  </a>
+                </div>
+              </div>
+            )}
             {isOverviewExpanded && (
               <div className="p-6">
                 <h4 className="mb-6 text-2xl font-bold bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-transparent">
@@ -194,9 +283,46 @@ export default function ContentGenerator() {
                 <div className="grid gap-6 md:grid-cols-2">
                   {result.topics_and_subtopics.topics.map((topic, topicIndex) => (
                     <div key={topicIndex} className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                      <h5 className="mb-3 text-lg font-medium text-gray-800 dark:text-gray-200">
-                        {topic.title}
-                      </h5>
+                      <div className="flex justify-between items-center mb-3">
+                        <h5 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                          {topic.title}
+                        </h5>
+                        <Button
+                          onClick={() => generateDiagram(
+                            `Create a concept map for this topic: ${topic.title}. The subtopics are: ${topic.subtopics.join(', ')}`,
+                            `topic-${topicIndex}`,
+                            'concept-map'
+                          )}
+                          disabled={!!generatingDiagram}
+                          className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-2 py-1 h-7"
+                        >
+                          {generatingDiagram === `topic-${topicIndex}` ? (
+                            <Loader2 className="animate-spin" size={14} />
+                          ) : (
+                            <Image size={14} />
+                          )}
+                          <span className="text-xs">Generate Diagram</span>
+                        </Button>
+                      </div>
+                      {diagrams[`topic-${topicIndex}`] && (
+                        <div className="mb-3">
+                          <div className="flex flex-col items-center">
+                            <img 
+                              src={diagrams[`topic-${topicIndex}`].imageUrl} 
+                              alt={`${topic.title} Diagram`} 
+                              className="max-w-full rounded-lg shadow-md"
+                            />
+                            <a 
+                              href={diagrams[`topic-${topicIndex}`].createEraserFileUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="mt-2 text-blue-600 hover:text-blue-800 text-xs"
+                            >
+                              Open in Eraser
+                            </a>
+                          </div>
+                        </div>
+                      )}
                       <ul className="list-disc space-y-1.5 pl-5">
                         {topic.subtopics.map((subtopic, subtopicIndex) => (
                           <li key={subtopicIndex} className="text-gray-700 dark:text-gray-200">
@@ -211,45 +337,99 @@ export default function ContentGenerator() {
             )}
           </Card>
 
-          {/* Visual Structure Card */}
-          {/* {result.diagram && (
-            <Card className="overflow-hidden bg-white/50 shadow-lg backdrop-blur-sm dark:bg-gray-800/50">
-              <div 
-                className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center cursor-pointer"
-                onClick={() => setIsDiagramExpanded(!isDiagramExpanded)}
-              >
-                <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Visual Structure</h3>
-                {isDiagramExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
-              </div>
-              {isDiagramExpanded && (
-                <div className="p-6">
-                  <div className="overflow-x-auto rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
-                    <pre className="whitespace-pre-wrap font-mono text-sm text-gray-700 dark:text-gray-200">
-                      {result.diagram}
-                    </pre>
-                  </div>
-                </div>
-              )}
-            </Card>
-          )} */}
-
           {/* Interview Questions Card */}
           <Card className="overflow-hidden bg-white/50 shadow-lg backdrop-blur-sm dark:bg-gray-800/50">
-            <div 
-              className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center cursor-pointer"
-              onClick={() => setIsQuestionsExpanded(!isQuestionsExpanded)}
-            >
+            <div className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center">
               <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Interview Questions</h3>
-              {isQuestionsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => generateDiagram(
+                    `Create a mind map of interview questions for ${result.topics_and_subtopics.title}. The questions are organized by subtopics: ${result.interviewQuestions.questions.map(q => q.subtopic).join(', ')}`,
+                    'interview-questions',
+                    'mind-map'
+                  )}
+                  disabled={!!generatingDiagram}
+                  className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-3 py-1 h-8"
+                >
+                  {generatingDiagram === 'interview-questions' ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Image size={16} />
+                  )}
+                  <span className="text-sm">Generate Diagram</span>
+                </Button>
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => setIsQuestionsExpanded(!isQuestionsExpanded)}
+                >
+                  {isQuestionsExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </div>
+              </div>
             </div>
+            {diagrams['interview-questions'] && (
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col items-center">
+                  <img 
+                    src={diagrams['interview-questions'].imageUrl} 
+                    alt="Interview Questions Diagram" 
+                    className="max-w-full rounded-lg shadow-md"
+                  />
+                  <a 
+                    href={diagrams['interview-questions'].createEraserFileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Open in Eraser
+                  </a>
+                </div>
+              </div>
+            )}
             {isQuestionsExpanded && (
               <div className="p-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   {result.interviewQuestions.questions.map((item, index) => (
                     <div key={index} className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                      <h4 className="mb-4 text-lg font-medium text-gray-800 dark:text-gray-200">
-                        {item.subtopic}
-                      </h4>
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                          {item.subtopic}
+                        </h4>
+                        <Button
+                          onClick={() => generateDiagram(
+                            `Create a mind map of interview questions for ${item.subtopic}: ${item.questions.join('. ')}`,
+                            `question-${index}`,
+                            'mind-map'
+                          )}
+                          disabled={!!generatingDiagram}
+                          className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-2 py-1 h-7"
+                        >
+                          {generatingDiagram === `question-${index}` ? (
+                            <Loader2 className="animate-spin" size={14} />
+                          ) : (
+                            <Image size={14} />
+                          )}
+                          <span className="text-xs">Generate Diagram</span>
+                        </Button>
+                      </div>
+                      {diagrams[`question-${index}`] && (
+                        <div className="mb-4">
+                          <div className="flex flex-col items-center">
+                            <img 
+                              src={diagrams[`question-${index}`].imageUrl} 
+                              alt={`${item.subtopic} Questions Diagram`} 
+                              className="max-w-full rounded-lg shadow-md"
+                            />
+                            <a 
+                              href={diagrams[`question-${index}`].createEraserFileUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="mt-2 text-blue-600 hover:text-blue-800 text-xs"
+                            >
+                              Open in Eraser
+                            </a>
+                          </div>
+                        </div>
+                      )}
                       <ol className="list-decimal space-y-2 pl-5">
                         {item.questions.map((question, qIndex) => (
                           <li key={qIndex} className="text-gray-700 dark:text-gray-200">
@@ -266,21 +446,97 @@ export default function ContentGenerator() {
 
           {/* Detailed Content Card */}
           <Card className="overflow-hidden bg-white/50 shadow-lg backdrop-blur-sm dark:bg-gray-800/50">
-            <div 
-              className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center cursor-pointer"
-              onClick={() => setIsContentExpanded(!isContentExpanded)}
-            >
+            <div className="border-b border-gray-200 bg-gray-50/50 p-4 dark:border-gray-700 dark:bg-gray-800/30 flex justify-between items-center">
               <h3 className="text-xl font-semibold text-gray-800 dark:text-gray-200">Detailed Content</h3>
-              {isContentExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+              <div className="flex items-center space-x-2">
+                <Button
+                  onClick={() => generateDiagram(
+                    `Create a detailed flowchart for the course: ${result.topics_and_subtopics.title}. The chapters are: ${result.detailedContent.sections.map(s => s.chapterTitle).join(', ')}`,
+                    'detailed-content',
+                    'flowchart'
+                  )}
+                  disabled={!!generatingDiagram}
+                  className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-3 py-1 h-8"
+                >
+                  {generatingDiagram === 'detailed-content' ? (
+                    <Loader2 className="animate-spin" size={16} />
+                  ) : (
+                    <Image size={16} />
+                  )}
+                  <span className="text-sm">Generate Diagram</span>
+                </Button>
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => setIsContentExpanded(!isContentExpanded)}
+                >
+                  {isContentExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                </div>
+              </div>
             </div>
+            {diagrams['detailed-content'] && (
+              <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex flex-col items-center">
+                  <img 
+                    src={diagrams['detailed-content'].imageUrl} 
+                    alt="Detailed Content Diagram" 
+                    className="max-w-full rounded-lg shadow-md"
+                  />
+                  <a 
+                    href={diagrams['detailed-content'].createEraserFileUrl} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="mt-2 text-blue-600 hover:text-blue-800 text-sm"
+                  >
+                    Open in Eraser
+                  </a>
+                </div>
+              </div>
+            )}
             {isContentExpanded && (
               <div className="divide-y divide-gray-200 dark:divide-gray-700">
                 {result.detailedContent.sections.map((section, index) => (
                   <div key={index} className="p-6">
                     <div className="mb-8">
-                      <h4 className="mb-4 text-xl font-medium text-gray-800 dark:text-gray-200">
-                        {section.chapterTitle}
-                      </h4>
+                      <div className="flex justify-between items-center mb-4">
+                        <h4 className="text-xl font-medium text-gray-800 dark:text-gray-200">
+                          {section.chapterTitle}
+                        </h4>
+                        <Button
+                          onClick={() => generateDiagram(
+                            `Create a flowchart for this chapter: ${section.chapterTitle}. The content is about: ${section.chapterContent.substring(0, 200)}...`,
+                            `chapter-${index}`,
+                            'flowchart'
+                          )}
+                          disabled={!!generatingDiagram}
+                          className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-2 py-1 h-7"
+                        >
+                          {generatingDiagram === `chapter-${index}` ? (
+                            <Loader2 className="animate-spin" size={14} />
+                          ) : (
+                            <Image size={14} />
+                          )}
+                          <span className="text-xs">Generate Diagram</span>
+                        </Button>
+                      </div>
+                      {diagrams[`chapter-${index}`] && (
+                        <div className="mb-4">
+                          <div className="flex flex-col items-center">
+                            <img 
+                              src={diagrams[`chapter-${index}`].imageUrl} 
+                              alt={`${section.chapterTitle} Diagram`} 
+                              className="max-w-full rounded-lg shadow-md"
+                            />
+                            <a 
+                              href={diagrams[`chapter-${index}`].createEraserFileUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="mt-2 text-blue-600 hover:text-blue-800 text-xs"
+                            >
+                              Open in Eraser
+                            </a>
+                          </div>
+                        </div>
+                      )}
                       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-900/50">
                         <div className="prose prose-gray dark:prose-invert max-w-none">
                           <p className="whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-200">
@@ -293,9 +549,46 @@ export default function ContentGenerator() {
                     <div className="space-y-6">
                       {section.subtopics.map((subtopic, subtopicIndex) => (
                         <div key={subtopicIndex} className="rounded-lg border border-gray-200 p-4 dark:border-gray-700">
-                          <h5 className="mb-3 text-lg font-medium text-gray-800 dark:text-gray-200">
-                            {subtopic.title}
-                          </h5>
+                          <div className="flex justify-between items-center mb-3">
+                            <h5 className="text-lg font-medium text-gray-800 dark:text-gray-200">
+                              {subtopic.title}
+                            </h5>
+                            <Button
+                              onClick={() => generateDiagram(
+                                `Create a concept map for this subtopic: ${subtopic.title}. The content is about: ${subtopic.content.substring(0, 200)}...`,
+                                `subtopic-${index}-${subtopicIndex}`,
+                                'concept-map'
+                              )}
+                              disabled={!!generatingDiagram}
+                              className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 px-2 py-1 h-7"
+                            >
+                              {generatingDiagram === `subtopic-${index}-${subtopicIndex}` ? (
+                                <Loader2 className="animate-spin" size={14} />
+                              ) : (
+                                <Image size={14} />
+                              )}
+                              <span className="text-xs">Generate Diagram</span>
+                            </Button>
+                          </div>
+                          {diagrams[`subtopic-${index}-${subtopicIndex}`] && (
+                            <div className="mb-3">
+                              <div className="flex flex-col items-center">
+                                <img 
+                                  src={diagrams[`subtopic-${index}-${subtopicIndex}`].imageUrl} 
+                                  alt={`${subtopic.title} Diagram`} 
+                                  className="max-w-full rounded-lg shadow-md"
+                                />
+                                <a 
+                                  href={diagrams[`subtopic-${index}-${subtopicIndex}`].createEraserFileUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="mt-2 text-blue-600 hover:text-blue-800 text-xs"
+                                >
+                                  Open in Eraser
+                                </a>
+                              </div>
+                            </div>
+                          )}
                           <div className="prose prose-gray dark:prose-invert max-w-none">
                             <p className="whitespace-pre-wrap leading-relaxed text-gray-700 dark:text-gray-200">
                               {subtopic.content}
