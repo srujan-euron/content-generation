@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { X, ChevronRight, Trash2 } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface SavedContent {
   id: string;
@@ -89,14 +90,17 @@ export default function Sidebar({ isOpen, onToggle, onSelectContent }: SidebarPr
           {/* Sidebar header */}
           <div className="flex items-center justify-between border-b p-4 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Saved Content</h2>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onToggle}
-              aria-label="Close sidebar"
-            >
-              <X size={20} />
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onToggle}
+                aria-label="Close sidebar"
+              >
+                <X size={20} />
+              </Button>
+            </div>
           </div>
 
           {/* Saved content list */}
