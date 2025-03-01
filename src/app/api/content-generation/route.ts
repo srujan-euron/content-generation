@@ -12,38 +12,38 @@ async function generateContent(input: string) {
     model,
     prompt: `Based on this syllabus or topic: "${input}", create a comprehensive structure for a book or course.
 
-Instructions:
-1. Analyze the main subject matter thoroughly
-2. Break it down into major topics (chapters)
-3. For each topic, create 3-5 detailed subtopics
-4. Ensure logical flow and progression of concepts
-5. Include both theoretical and practical aspects
+              Instructions:
+              1. Analyze the main subject matter thoroughly
+              2. Break it down into major topics (chapters)
+              3. For each topic, create 4-6 detailed subtopics
+              4. Ensure logical flow and progression of concepts
+              5. Include both theoretical and practical aspects
 
-Example format:
-{
-  "title": "Main Subject",
-  "topics": [
-    {
-      "title": "Chapter 1: Introduction to [Topic]",
-      "subtopics": [
-        "1.1 Understanding the Basics",
-        "1.2 Historical Context",
-        "1.3 Key Principles"
-      ]
-    },
-    {
-      "title": "Chapter 2: Fundamentals of [Topic]",
-      "subtopics": [
-        "2.1 Core Concepts",
-        "2.2 Building Blocks",
-        "2.3 Essential Components",
-        "2.4 Best Practices"
-      ]
-    }
-  ]
-}
+              Example format:
+              {
+                "title": "Main Subject",
+                "topics": [
+                  {
+                    "title": "Chapter 1: Introduction to [Topic]",
+                    "subtopics": [
+                      "1.1 Understanding the Basics",
+                      "1.2 Historical Context",
+                      "1.3 Key Principles"
+                    ]
+                  },
+                  {
+                    "title": "Chapter 2: Fundamentals of [Topic]",
+                    "subtopics": [
+                      "2.1 Core Concepts",
+                      "2.2 Building Blocks",
+                      "2.3 Essential Components",
+                      "2.4 Best Practices"
+                    ]
+                  }
+                ]
+              }
 
-Make sure each chapter and subtopic title is clear, descriptive, and the progression makes sense for learning.`,
+              Make sure each chapter and subtopic title is clear, descriptive, and the progression makes sense for learning.`,
     schema: z.object({
       title: z.string(),
       topics: z.array(
@@ -55,16 +55,16 @@ Make sure each chapter and subtopic title is clear, descriptive, and the progres
     }),
     system: `You are an expert educational content architect specializing in creating well-structured learning materials.
 
-Your task is to:
-1. Analyze the given subject matter deeply
-2. Create a logical and comprehensive chapter structure
-3. Break down each chapter into meaningful subtopics
-4. Ensure each chapter and subtopic builds upon previous knowledge
-5. Include both foundational and advanced concepts
-6. Balance theoretical knowledge with practical applications
-7. Consider the learner's progression from basics to mastery
-8. Make chapter and subtopic titles clear, descriptive, and engaging
-9. Maintain consistent naming and formatting conventions`,
+              Your task is to:
+                1. Analyze the given subject matter deeply
+                2. Create a logical and comprehensive chapter structure
+                3. Break down each chapter into meaningful subtopics
+                4. Ensure each chapter and subtopic builds upon previous knowledge
+                5. Include both foundational and advanced concepts
+                6. Balance theoretical knowledge with practical applications
+                7. Consider the learner's progression from basics to mastery
+                8. Make chapter and subtopic titles clear, descriptive, and engaging
+                9. Maintain consistent naming and formatting conventions`,
   });
 
   // Create Interview Questions
@@ -77,6 +77,19 @@ Your task is to:
         questions: z.array(z.string())
       }))
     }),
+    system: `You are an expert interviewer specializing in creating comprehensive interview questions for educational content.
+
+              Your task is to:
+                1. Create 10 interview questions for each subtopic
+                2. Ensure each question is clear, concise, and relevant to the subtopic
+                3. Make the questions challenging and thought-provoking
+                4. Include both theoretical and practical aspects
+                5. Use a variety of question types (e.g., multiple choice, true/false, fill-in-the-blank)
+                6. Make the questions engaging and interesting
+                7. Ensure the questions are aligned with the learning objectives of the subtopic
+                8. Use a mix of easy and difficult questions
+                9. Include questions that test the learner's understanding of the subtopic
+                10. Make sure the questions are not too easy or too difficult`
   });
 
   // Generate detailed content
@@ -86,14 +99,21 @@ Your task is to:
 
       Instructions:
           1. For each chapter and subtopic, provide:
-            - A comprehensive introduction
+            - A comprehensive 4-5 paragraph introduction
             - Detailed explanation of key concepts and principles
+                a. Provide a detailed 4-5 paragraph explanation of the key concepts and principles
             - In-depth theoretical background
+                a. Provide a detailed 4-5 paragraph explanation of the theoretical background
             - Multiple real-world examples and case studies
+                a. Provide a detailed 4-5 paragraph explanation of the real-world examples and case studies
             - Step-by-step tutorials or walkthroughs
+                a. Provide a detailed 4-5 paragraph explanation of the step-by-step tutorials or walkthroughs
             - Practical exercises and applications
+                a. Provide a detailed 4-5 paragraph explanation of the practical exercises and applications
             - Common pitfalls and how to avoid them
+                a. Provide a detailed 4-5 paragraph explanation of the common pitfalls and how to avoid them
             - Best practices and industry standards
+                a. Provide a detailed 4-5 paragraph explanation of the best practices and industry standards
             - Summary of key points
             - Review questions and discussion topics
 
@@ -132,42 +152,15 @@ Your task is to:
     }),
     system: `You are an expert educational content architect specializing in creating well-structured learning materials.
     
-    Create content that is extremely detailed and thorough, and flows logically from basic to advanced concepts.
-    Include plenty of examples and illustrations, and connect theory to real-world practice.
-    Make it clear, engaging, and professional.
-    Cover both fundamentals and edge cases.
-    Address common misconceptions and provide actionable insights.
+            Create content that is extremely detailed and thorough, and flows logically from basic to advanced concepts.
+            Include plenty of examples and illustrations, and connect theory to real-world practice.
+            Make it clear, engaging, and professional.
+            Cover both fundamentals and edge cases.
+            Address common misconceptions and provide actionable insights.
 
-    Content for each subtopic should be atleast 2000 words.
+            Content for each subtopic should be atleast 2000 words.
     `
   });
-
-  // Generate diagram
-//   const { text: diagram } = await generateText({
-//     model,
-//     prompt: `Create a detailed ASCII diagram showing the hierarchical structure of this book/course: ${JSON.stringify(topics_and_subtopics)}
-
-// Instructions:
-// 1. Show the main title at the top
-// 2. Connect it to each chapter
-// 3. Show relationships between topics
-// 4. Use ASCII characters to create:
-//    - Boxes for main topics
-//    - Lines for connections
-//    - Arrows for flow
-//    - Clear hierarchy levels
-// 5. Make it visually clear and easy to understand
-// 6. Include chapter numbers and short titles
-// 7. Show progression and relationships`,
-
-//     system: `You are an expert in creating clear, visual representations of complex information structures.
-// Create an ASCII diagram that:
-// - Shows clear hierarchy
-// - Uses simple lines and boxes
-// - Makes relationships obvious
-// - Is easy to read and understand
-// - Fits well in a terminal or text display`,
-//   });
 
   return {
     topics_and_subtopics,
